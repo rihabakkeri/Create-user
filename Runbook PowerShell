@@ -1,0 +1,48 @@
+Import-Module -Name Az.Accounts
+Import-Module -Name Az.Storage
+Import-Module -Name AzureAD
+Import-Module -Name MSOnline
+try {
+    Write-Output "Logging in to Azure..."
+    $AzureContext = (Connect-AzAccount -Identity -SubscriptionId "ID" -TenantId "id" ).context
+}
+catch {
+    if(!$AzureContext) {
+        throw "Identity Connection failed to establish."
+    }
+    else {
+        throw $_.Exception
+    }
+}
+Param(
+    $User = "e-mail"
+    )
+
+$PWord = ConvertTo-SecureString -AsPlainText "Password" -Force
+$Cred = New-Object –TypeName System.Management.Automation.PSCredential –ArgumentList $User, $PWord
+Import-Module MSOnline
+Connect-MSOLService -Credential $Cred
+Connect-AzureAD -Credential $Cred
+
+$storageAccountName ="name"
+$storageAccountKey ="key"
+$context = New-AzureStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $storageAccountKey
+$filevalue= Get-AzureStorageFileContent  -ShareName "csvfile" -File  "csv.csv" -Destination $env:temp -Context $context -Force
+$filePath=$env:temp+"\"+$filevalue.Name
+ Write-Output $filePath
+$t = Import-Csv -Path $filePath
+echo $t
+$User = "email"
+$PWord = ConvertTo-SecureString –String "password" –AsPlainText -Force # adminPW enycrypted globale Variable 
+$Cred = New-Object –TypeName System.Management.Automation.PSCredential –ArgumentList $User, $PWord
+Connect-MSOLService -Credential $Cred
+Connect-AzureAD -Credential $Cred
+
+ForEach($user in $t) {
+$name = $user.DisplayName
+$mail = $user.UserPrincipalName
+$UserType = $user.UserType
+ $PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
+ $PasswordProfile.Password = "Dummy@Password"
+ New-AzureADUser -DisplayName $name -PasswordProfile $PasswordProfile -UserPrincipalName $mail -AccountEnabled $true -MailNickName "user"
+}
