@@ -1,0 +1,28 @@
+connect-azuread
+
+#prompt user for csv file path
+
+
+$filepath = read-host -Prompt "Please enter the path to your CSV file"
+
+$users = Import-Csv -Path $filepath
+
+#loop thought each row and gather information
+ForEach($user in $users) {
+#Gather the user's information
+$name = $user.DisplayName
+$mail = $user.UserPrincipalName
+$UserType = $user.UserType
+
+#generate PasswordProfile
+$PasswordProfile = New-Object -TypeName Microsoft.Open.AzureAD.Model.PasswordProfile
+PasswordProfile.Password = "Dummy@Password"
+$useobj=$user.ObjectId
+#
+New-AzureADUser -DisplayName $name -PasswordProfile $PasswordProfile -UserPrincipalName $mail -AccountEnabled $true -MailNickName "user"
+#$
+$useobj=$user.ObjectId
+echo $useobj
+#Echo output for each new user
+echo "Account created for $name $mail $UserType"
+}
